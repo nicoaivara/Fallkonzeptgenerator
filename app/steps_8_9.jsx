@@ -89,7 +89,7 @@ function StepGoals({ state, setState, go }) {
   return (
     <>
       <div className="page-head">
-        <div className="crumb">Schritt 08</div>
+        <div className="crumb">Schritt 6.1</div>
         <h1>Ziele & Behandlungsplan</h1>
         <p>Ziele entstehen aus ausgewählten Symptomen und übernommenen Fallmodell-Hypothesen. Methoden werden aus übernommenen Zielen abgeleitet.</p>
       </div>
@@ -187,7 +187,7 @@ function StepPrognosis({ state, setState, update, go }) {
   return (
     <>
       <div className="page-head">
-        <div className="crumb">Schritt 09</div>
+        <div className="crumb">Schritt 6.2</div>
         <h1>Prognose</h1>
         <p>Aus den tatsächlich angegebenen Faktoren ableiten — Motivation allein reicht nicht.</p>
       </div>
@@ -254,7 +254,7 @@ function StepConversion({ state, setState, update, go }) {
   return (
     <>
       <div className="page-head">
-        <div className="crumb">Schritt 9b</div>
+        <div className="crumb">Schritt 6.3</div>
         <h1>Umwandlung — Verlauf seit Beginn der KZT</h1>
         <p>Pro Symptom und pro Ziel den aktuellen Stand markieren. Daraus wird die Umwandlungsbegründung gebaut.</p>
       </div>

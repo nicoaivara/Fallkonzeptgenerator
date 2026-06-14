@@ -97,21 +97,24 @@ function StepReport({ state, go }) {
           <h1>{state.meta.antrag}: Bericht zur Begründung</h1>
           {(() => {
             const p = pronouns(state.basics.gender);
-            const ini = state.meta.patientInitials;
-            const label = ini
-              ? (p.person ? `${p.person} ${ini}` : ini)
-              : (state.basics.gender ? p.AddrShort : "Pat. (anonym)");
+            const b2 = state.basics;
+            const refInitial = window.initialFromRef(state.meta.patientInitials);
+            const label = refInitial
+              ? (p.person ? `${p.person} ${refInitial}` : refInitial)
+              : (b2.gender ? p.AddrShort : "Pat. (anonym)");
+            const familySit = [b2.familienstand, b2.wohnsituation].filter(Boolean).join(", ") || b2.family;
             return (
               <div className="report-meta">
-                {label} · {state.basics.age ? `${state.basics.age} J.` : ""}
-                {state.basics.occupation ? ` · ${state.basics.occupation}` : ""}
-                {state.basics.family ? ` · ${state.basics.family}` : ""}
-                {" · "}{state.meta.verfahren} · {state.meta.domain} · Datum: {state.meta.datum}
+                {label} · {b2.age ? `${b2.age} J.` : ""}
+                {b2.occupation ? ` · ${b2.occupation}` : ""}
+                {b2.employmentStatus ? ` (${b2.employmentStatus})` : ""}
+                {familySit ? ` · ${familySit}` : ""}
+                {" · "}{state.meta.verfahren} · {window.ICD_CHAPTERS?.find(c => c.id === state.meta.domain)?.desc || state.meta.domain} · Datum: {state.meta.datum}
               </div>
             );
           })()}
 
-          <h2>1 Soziodemografische Daten</h2>
+          <h2>1 Relevante soziodemografische Daten</h2>
           {(() => {
             const b = state.basics;
             const m = state.meta;
@@ -121,22 +124,37 @@ function StepReport({ state, go }) {
             }
             // Aus Strukturfeldern automatisch zusammensetzen (Konjunktiv I)
             const parts = [];
-            const addr = m.patientInitials
-              ? (p.person ? `${p.person} ${m.patientInitials}` : m.patientInitials)
+            const refInitial = window.initialFromRef(m.patientInitials);
+            const addr = refInitial
+              ? (p.person ? `${p.person} ${refInitial}` : refInitial)
               : p.AddrShort;
             const opener = [];
             if (b.age) opener.push(`sei ${b.age} Jahre alt`);
-            if (b.family) opener.push(b.family);
+            // Familienstand + Wohnsituation (neue Felder, Fallback auf Legacy b.family)
+            const familyParts = [b.familienstand, b.wohnsituation].filter(Boolean);
+            if (familyParts.length) opener.push(familyParts.join(", "));
+            else if (b.family) opener.push(b.family);
             if (opener.length) parts.push(`${addr} ${opener.join(", ")}.`);
-            if (b.occupation) parts.push(`${p.Er_Sie} arbeite als ${b.occupation}.`);
-            if (b.kids && b.kids.toLowerCase() !== "nein" && b.kids !== "") parts.push(`Kinder: ${b.kids}.`);
+            // Beruf + Beschäftigungsstatus
+            if (b.occupation || b.employmentStatus) {
+              const occParts = [b.occupation, b.employmentStatus ? `(${b.employmentStatus})` : ""].filter(Boolean);
+              parts.push(`${p.Er_Sie} arbeite als ${occParts.join(" ")}.`);
+            }
+            // Kinder (neue Felder, Fallback auf Legacy b.kids)
+            const kidsText = b.kidsCount || b.kids;
+            if (kidsText && kidsText.toLowerCase() !== "keine kinder" && kidsText.toLowerCase() !== "nein" && kidsText !== "") {
+              const kidsDetail = b.kidsNotes ? ` (${b.kidsNotes})` : "";
+              parts.push(`Kinder: ${kidsText}${kidsDetail}.`);
+            }
             if (b.workability) parts.push(`Aktuelle Arbeitsfähigkeit: ${b.workability}.`);
             return parts.length
               ? <p>{parts.join(" ")}</p>
               : <p><em>— keine soziodemografischen Angaben —</em></p>;
           })()}
 
-          <h2>2 Symptomatik</h2>
+          <h2>2 Symptomatik und psychischer Befund</h2>
+
+          <h3>Symptomatik</h3>
           {labelsLead.length === 0 && labelsPresent.length === 0 ? (
             <p><em>— keine Symptomatik dokumentiert —</em></p>
           ) : (
@@ -160,7 +178,16 @@ function StepReport({ state, go }) {
             </>
           )}
 
-          <h2>3 Psychischer Befund</h2>
+          <h3>Suizidalität und Risiko</h3>
+          <p>
+            Suizidalität: <strong>{state.risk.suicidality || "—"}</strong>
+            {state.risk.distancing ? <>, {state.risk.distancing}</> : null}.
+            {Object.keys(state.risk.protective).length > 0 && <> Schutzfaktoren: {Object.keys(state.risk.protective).join(", ")}.</>}
+            {Object.keys(state.risk.risks).length > 0 && <> Risikofaktoren: {Object.keys(state.risk.risks).join(", ")}.</>}
+          </p>
+          {state.risk.crisisPlan && <p><strong>Risikomanagement:</strong> {state.risk.crisisPlan}</p>}
+
+          <h3>Psychischer Befund</h3>
           {Object.keys(findingsByArea).length === 0 && unauf.length === 0 ? (
             <p><em>— Befund noch nicht übernommen —</em></p>
           ) : (
@@ -173,24 +200,40 @@ function StepReport({ state, go }) {
             </>
           )}
 
-          <h2>4 Suizidalität & Risiko</h2>
-          <p>
-            Suizidalität: <strong>{state.risk.suicidality || "—"}</strong>
-            {state.risk.distancing ? <>, {state.risk.distancing}</> : null}.
-            {Object.keys(state.risk.protective).length > 0 && <> Schutzfaktoren: {Object.keys(state.risk.protective).join(", ")}.</>}
-            {Object.keys(state.risk.risks).length > 0 && <> Risikofaktoren: {Object.keys(state.risk.risks).join(", ")}.</>}
-          </p>
-          {state.risk.crisisPlan && <p><strong>Risikomanagement:</strong> {state.risk.crisisPlan}</p>}
+          <h2>3 Somatischer Befund</h2>
+          {(() => {
+            const somItems = Object.keys(state.somatic.items || {});
+            return (
+              <p>
+                Substanz- und somatische Abklärung: <strong>{state.somatic.status || "—"}</strong>
+                {somItems.length > 0 ? <>. Berücksichtigt wurden: {somItems.join(", ")}</> : null}.
+              </p>
+            );
+          })()}
 
-          <h2>5 Differentialdiagnostik</h2>
+          <h2>4 Behandlungsrelevante Angaben zur Lebensgeschichte</h2>
           <p>
-            Bipolaritätscheck: {state.bipolarity.result === "kein Hinweis" ? "kein Hinweis" : state.bipolarity.result === "unclear" ? "unklar, weiter zu prüfen" : "Hinweis auf Hypomanie/Manie"}.
-            {" "}Psychosecheck: {state.psychosis.any ? "auffällig — DD/Schweregrad zu prüfen" : "unauffällig"}.
-            {" "}Substanz/Somatik: {state.somatic.status}.
+            Aus Anamnese, Lebensgeschichte und bisherigem Krankheitsverlauf wird das folgende
+            Erklärungsmodell zu Entstehung und Aufrechterhaltung der Störung abgeleitet (makro- und
+            mikroanalytische Verhaltensanalyse).
           </p>
-          {state.diagnoses.ddNotes && <p>{state.diagnoses.ddNotes}</p>}
+          {acceptedMechs.length === 0 ? <p><em>— noch keine Hypothesen übernommen —</em></p> : (
+            acceptedMechs.map(m => {
+              const acc = state.mechanisms[m.id].acceptedItems || {};
+              const matched = window.scoreMechanism(m, new Set(sel)).matched;
+              const symLabels = matched.map(x => window.SYMPTOM_BY_ID[x.id]?.label).filter(Boolean);
+              return (
+                <div key={m.id} style={{ marginBottom: "10pt" }}>
+                  <p><strong>{m.label}.</strong> Hergeleitet aus: {symLabels.join(", ")}.</p>
+                  {(acc.predispositions?.length > 0) && <p><em>Prädispositionen / Lerngeschichte:</em> {acc.predispositions.join("; ")}.</p>}
+                  {(acc.maintainers?.length > 0) && <p><em>Aufrechterhaltend:</em> {acc.maintainers.join("; ")}.</p>}
+                  {(acc.beliefs?.length > 0) && <p><em>Grundannahmen:</em> {acc.beliefs.map(b => `\u201e${b}\u201c`).join("; ")}.</p>}
+                </div>
+              );
+            })
+          )}
 
-          <h2>6 Diagnose</h2>
+          <h2>5 Diagnose zum Zeitpunkt der Antragstellung</h2>
           {(state.meta.icdCodes || []).length > 0 && (
             <ul>
               {state.meta.icdCodes.map(c => {
@@ -206,29 +249,25 @@ function StepReport({ state, go }) {
             <ul>{acceptedDx.map(([k, v]) => <li key={k}><strong>{v.label}</strong> ({v.certainty}) — {v.reasoning}</li>)}</ul>
           )}
 
-          <h2>7 Fallmodell</h2>
-          {acceptedMechs.length === 0 ? <p><em>— noch keine Hypothesen übernommen —</em></p> : (
-            acceptedMechs.map(m => {
-              const acc = state.mechanisms[m.id].acceptedItems || {};
-              const matched = window.scoreMechanism(m, new Set(sel)).matched;
-              const symLabels = matched.map(x => window.SYMPTOM_BY_ID[x.id]?.label).filter(Boolean);
-              return (
-                <div key={m.id} style={{ marginBottom: "10pt" }}>
-                  <p><strong>{m.label}.</strong> Hergeleitet aus: {symLabels.join(", ")}.</p>
-                  {(acc.maintainers?.length > 0) && <p><em>Aufrechterhaltend:</em> {acc.maintainers.join("; ")}.</p>}
-                  {(acc.predispositions?.length > 0) && <p><em>Prädispositionen:</em> {acc.predispositions.join("; ")}.</p>}
-                  {(acc.beliefs?.length > 0) && <p><em>Grundannahmen:</em> {acc.beliefs.map(b => `\u201e${b}\u201c`).join("; ")}.</p>}
-                </div>
-              );
-            })
-          )}
+          <h3>Differentialdiagnostische Überlegungen</h3>
+          <p>
+            Bipolaritätscheck: {state.bipolarity.result === "kein Hinweis" ? "kein Hinweis" : state.bipolarity.result === "unclear" ? "unklar, weiter zu prüfen" : "Hinweis auf Hypomanie/Manie"}.
+            {" "}Psychosecheck: {state.psychosis.any ? "auffällig — DD/Schweregrad zu prüfen" : "unauffällig"}.
+          </p>
+          {state.diagnoses.ddNotes && <p>{state.diagnoses.ddNotes}</p>}
 
-          <h2>8 Therapieziele</h2>
+          <h2>6 Behandlungsplan und Prognose</h2>
+          <p>
+            Aus Diagnose und Fallmodell leiten sich die folgenden Therapieziele und der darauf
+            aufbauende Behandlungsplan ab.
+          </p>
+
+          <h3>Therapieziele</h3>
           {acceptedGoals.length === 0 ? <p><em>— keine Ziele übernommen —</em></p> : (
             <ul>{acceptedGoals.map(g => <li key={g.label}>{g.label}</li>)}</ul>
           )}
 
-          <h2>9 Behandlungsplan</h2>
+          <h3>Behandlungsplan</h3>
           {acceptedMethods.length === 0 ? <p><em>— noch kein Plan zusammengestellt —</em></p> : (
             <ul>{acceptedMethods.map(([m, v]) => (
               <li key={m}>
@@ -238,12 +277,12 @@ function StepReport({ state, go }) {
             ))}</ul>
           )}
 
-          <h2>10 Prognose</h2>
+          <h3>Prognose</h3>
           <p>{state.prognosis.formulation || "— Prognose-Formulierung noch nicht erstellt —"}</p>
 
           {state.meta.antrag === "Umwandlungsantrag" && (
             <>
-              <h2>11 Umwandlungsbegründung</h2>
+              <h3>Umwandlungsbegründung</h3>
               {(() => {
                 const sc = state.conversion.symptomChange || {};
                 const verbessert = Object.entries(sc).filter(([_, v]) => v === "gebessert" || v === "teilweise gebessert").map(([sid]) => window.SYMPTOM_BY_ID[sid]?.label).filter(Boolean);

@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fallkonzeptgenerator – Design Exploration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: #f5f7fa;
+      color: #1a1a1a;
+    }
+
+    .variant-frame {
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 100%;
+      height: 700px;
+    }
+
+    /* Variant Styles */
+    .var1 { background: linear-gradient(135deg, #f8fafb 0%, #ffffff 100%); }
+    .var1-sidebar { background: #ffffff; border-right: 1px solid #e0e4e8; }
+    .var1-btn { background: white; color: #2c5aa0; border: 1px solid #e0e4e8; border-radius: 8px; }
+    .var1-btn:hover { background: #f0f4f8; }
+    .var1-btn.active { background: #e8f0f9; color: #2c5aa0; font-weight: 600; border-left: 3px solid #2c5aa0; }
+
+    .var2 { background: #0f2847; color: white; }
+    .var2-sidebar { background: #0f2847; border-right: 1px solid #1a3a5a; }
+    .var2-btn { background: transparent; color: #7ca3d1; border: none; }
+    .var2-btn:hover { background: rgba(124, 163, 209, 0.1); color: #b3d9ff; }
+    .var2-btn.active { background: #2c5aa0; color: white; font-weight: 600; }
+    .var2-main { background: #f5f7fa; color: #1a1a1a; }
+
+    .var3 { background: linear-gradient(135deg, #e6f2ff 0%, #f0f8ff 100%); }
+    .var3-sidebar { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border-right: 1px solid rgba(44, 90, 160, 0.1); }
+    .var3-btn { background: transparent; color: #2c5aa0; border: none; border-radius: 10px; }
+    .var3-btn:hover { background: rgba(44, 90, 160, 0.08); }
+    .var3-btn.active { background: rgba(44, 90, 160, 0.15); color: #0f2847; font-weight: 600; }
+
+    .var4 { background: white; }
+    .var4-nav { display: flex; background: #0f2847; border-bottom: 1px solid #1a3a5a; padding: 0; }
+    .var4-nav-brand { padding: 18px 28px; font-weight: 700; color: white; font-size: 14px; border-right: 1px solid #1a3a5a; }
+    .var4-nav-items { display: flex; flex: 1; gap: 0; }
+    .var4-nav-btn { padding: 16px 20px; background: transparent; border: none; color: #7ca3d1; border-bottom: 3px solid transparent; cursor: pointer; font-size: 12px; }
+    .var4-nav-btn:hover { background: rgba(124, 163, 209, 0.1); color: #b3d9ff; }
+    .var4-nav-btn.active { background: rgba(44, 90, 160, 0.2); color: white; border-bottom-color: #7ca3d1; font-weight: 600; }
+
+    .var5 { background: linear-gradient(135deg, #f0f4f8 0%, #f8fafb 100%); }
+    .var5-sidebar { background: white; border-right: 1px solid #e0e4e8; box-shadow: 2px 0 8px rgba(0,0,0,0.04); }
+    .var5-btn { background: transparent; color: #5a6f85; border: none; border-radius: 10px; }
+    .var5-btn:hover { background: rgba(44, 90, 160, 0.08); color: #2c5aa0; }
+    .var5-btn.active { background: rgba(44, 90, 160, 0.12); color: #2c5aa0; font-weight: 600; }
+    .var5-card { background: white; border: none; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+    .var6 { background: linear-gradient(135deg, #f3f8fc 0%, #fafdff 100%); }
+    .var6-sidebar { background: rgba(255, 255, 255, 0.85); border-right: 2px solid #d4e4f7; }
+    .var6-btn { background: transparent; color: #4a7ba7; border: none; border-radius: 14px; }
+    .var6-btn:hover { background: rgba(74, 123, 167, 0.1); color: #2c5aa0; }
+    .var6-btn.active { background: linear-gradient(135deg, #d4e4f7 0%, #e8f0f9 100%); color: #2c5aa0; font-weight: 700; box-shadow: 0 2px 8px rgba(44, 90, 160, 0.15); }
+
+    .layout-grid { display: grid; grid-template-columns: 280px 1fr; height: 100%; }
+    .sidebar { padding: 20px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .sidebar-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+    .step-btn { padding: 10px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; transition: all 120ms; width: 100%; text-align: left; }
+    .main { padding: 40px 44px; overflow-y: auto; }
+    .main h1 { font-size: 24px; font-weight: 700; margin: 0 0 8px; }
+    .main p { color: #5a6f85; margin: 0 0 20px; max-width: 600px; }
+    .card { border-radius: 10px; padding: 18px 20px; margin-bottom: 14px; }
+    .card h3 { font-size: 12px; text-transform: uppercase; margin: 0 0 10px; font-weight: 600; color: #5a6f85; }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .chip { padding: 8px 14px; border-radius: 6px; background: #e8f0f9; color: #2c5aa0; font-size: 13px; font-weight: 500; }
+    .input-field { width: 100%; padding: 10px 12px; border: 1px solid #e0e4e8; border-radius: 8px; font-size: 13px; font-family: inherit; }
+    .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+    .btn { padding: 10px 18px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; transition: all 120ms; font-family: inherit; }
+    .btn-primary { background: #2c5aa0; color: white; }
+    .btn-secondary { background: white; color: #0f2847; border: 1px solid #e0e4e8; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    function Variant1() {
+      return (
+        <div className="variant-frame var1">
+          <div className="layout-grid">
+            <div className="sidebar var1-sidebar">
+              <div className="sidebar-title" style={{ color: '#0f2847' }}>Generator</div>
+              {[1,2,3,4,5,6,7,8,9,10].map(i => (
+                <button key={i} className={`step-btn var1-btn ${i === 3 ? 'active' : ''}`} style={{ color: i === 3 ? '#2c5aa0' : '#5a6f85' }}>
+                  <span style={{ fontSize: '11px' }}>0{i}</span> Schritt
+                </button>
+              ))}
+            </div>
+            <div className="main" style={{ background: '#fafbfc' }}>
+              <h1 style={{ color: '#0f2847' }}>Symptomatik & Verlauf</h1>
+              <p>Auswahl und Dokumentation der psychiatrischen Symptome.</p>
+              <div className="card" style={{ background: 'white', border: '1px solid #e0e4e8' }}>
+                <h3>Leitsymptome</h3>
+                <div className="chips">
+                  {['Depressive Stimmung', 'Schlafstörung', 'Anhedonie'].map(s => (
+                    <span key={s} className="chip">{s}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="card" style={{ background: 'white', border: '1px solid #e0e4e8' }}>
+                <h3>Verlauf</h3>
+                <input type="text" className="input-field" placeholder="z. B. langsamer Beginn vor 6 Wochen..." />
+              </div>
+              <div className="btn-row">
+                <button className="btn btn-primary">Weiter</button>
+                <button className="btn btn-secondary">Zurück</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function Variant2() {
+      return (
+        <div className="variant-frame var2">
+          <div className="layout-grid">
+            <div className="sidebar var2-sidebar">
+              <div className="sidebar-title" style={{ color: 'white' }}>Generator</div>
+              {[1,2,3,4,5,6,7,8,9,10].map(i => (
+                <button key={i} className={`step-btn var2-btn ${i === 3 ? 'active' : ''}`}>
+                  <span style={{ fontSize: '11px' }}>0{i}</span> Schritt
+                </button>
+              ))}
+            </div>
+            <div className="main var2-main">
+              <h1 style={{ color: '#0f2847', marginTop: 0 }}>Symptomatik & Verlauf</h1>
+              <p style={{ color: '#666' }}>Auswahl und Dokumentation der psychiatrischen Symptome.</p>
+              <div className="card" style={{ background: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+                <h3 style={{ color: '#0f2847' }}>Leitsymptome</h3>
+                <div className="chips">
+                  {['Depressive Stimmung', 'Schlafstörung', 'Anhedonie'].map(s => (
+                    <span key={s} className="chip">{s}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="card" style={{ background: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+                <h3 style={{ color: '#0f2847' }}>Verlauf</h3>
+                <input type="text" className="input-field" placeholder="z. B. langsamer Beginn vor 6 Wochen..." />
+              </div>
+              <div className="btn-row">
+                <button className="btn btn-primary">Weiter</button>
+                <button className="btn btn-secondary">Zurück</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function Variant3() {
+      return (
+        <div className="variant-frame var3">
+          <div className="layout-grid">
+            <div className="sidebar var3-sidebar">
+              <div className="sidebar-title" style={{ color: '#0f2847' }}>Generator</div>
+              {[1,2,3,4,5,6,7,8,9,10].map(i => (
+                <button key={i} className={`step-btn var3-btn ${i === 3 ? 'active' : ''}`}>
+                  <span style={{ fontSize: '11px' }}>0{i}</span> Schritt
+                </button>
+              ))}
+            </div>
+            <div className="main">
+              <h1 style={{ color: '#0f2847', marginTop: 0 }}>Symptomatik & Verlauf</h1>
+              <p style={{ color: '#4a7ba7' }}>Auswahl und Dokumentation der psychiatrischen Symptome.</p>
+              <div className="card" style={{ background: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(10px)', border: '1px solid rgba(44, 90, 160, 0.15)' }}>
+                <h3 style={{ color: '#2c5aa0' }}>Leitsymptome</h3>
+                <div className="chips">
+                  {['Depressive Stimmung', 'Schlafstörung', 'Anhedonie'].map(s => (
+                    <span key={s} style={{ padding: '8px 14px', background: 'rgba(44, 90, 160, 0.1)', color: '#2c5aa0', borderRadius: '10px', fontSize: '13px', fontWeight: '500' }}>{s}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="card" style={{ background: 'rgba(255, 255, 255, 0.5)', backdropFilter: 'blur(10px)', border: '1px solid rgba(44, 90, 160, 0.15)' }}>
+                <h3 style={{ color: '#2c5aa0' }}>Verlauf</h3>
+                <input type="text" className="input-field" placeholder="z. B. langsamer Beginn vor 6 Wochen..." style={{ background: 'rgba(255, 255, 255, 0.5)', border: '1px solid rgba(44, 90, 160, 0.2)' }} />
+              </div>
+              <div className="btn-row">
+                <button className="btn btn-primary">Weiter</button>
+                <button className="btn btn-secondary">Zurück</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function Variant4() {
+      return (
+        <div className="variant-frame var4" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="var4-nav">
+            <div className="var4-nav-brand">Fallkonzeptgenerator</div>
+            <div className="var4-nav-items">
+              {[1,2,3,4,5,6,7,8,9,10].map(i => (
+                <button key={i} className={`var4-nav-btn ${i === 3 ? 'active' : ''}`}>
+                  0{i} Schritt
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="main" style={{ flex: 1, overflowY: 'auto' }}>
+            <h1 style={{ color: '#0f2847', marginTop: 0 }}>Symptomatik & Verlauf</h1>
+            <p style={{ color: '#5a6f85' }}>Auswahl und Dokumentation der psychiatrischen Symptome.</p>
+            <div className="card" style={{ background: '#f8fafb', border: '1px solid #e0e4e8' }}>
+              <h3>Leitsymptome</h3>
+              <div className="chips">
+                {['Depressive Stimmung', 'Schlafstörung', 'Anhedonie'].map(s => (
+                  <span key={s} className="chip">{s}</span>
+                ))}
+              </div>
+            </div>
+            <div className="card" style={{ background: '#f8fafb', border: '1px solid #e0e4e8' }}>
+              <h3>Verlauf</h3>
+              <input type="text" className="input-field" placeholder="z. B. langsamer Beginn vor 6 Wochen..." />
+            </div>
+            <div className="btn-row">
+              <button className="btn btn-primary">Weiter</button>
+              <button className="btn btn-secondary">Zurück</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function Variant5() {
+      return (
+        <div className="variant-frame var5">
+          <div className="layout-grid">
+            <div className="sidebar var5-sidebar">
+              <div className="sidebar-title" style={{ color: '#0f2847' }}>Generator</div>
+              {[1,2,3,4,5,6,7,8,9,10].map(i => (
+                <button key={i} className={`step-btn var5-btn ${i === 3 ? 'active' : ''}`}>
+                  <span style={{ fontSize: '11px' }}>0{i}</span> Schritt
+                </button>
+              ))}
+            </div>
+            <div className="main">
+              <h1 style={{ color: '#0f2847', marginTop: 0, fontSize: '28px' }}>Symptomatik & Verlauf</h1>
+              <p style={{ color: '#5a6f85' }}>Auswahl und Dokumentation der psychiatrischen Symptome.</p>
+              <div className="card var5-card">
+                <h3>Leitsymptome</h3>
+                <div className="chips">
+                  {['Depressive Stimmung', 'Schlafstörung', 'Anhedonie'].map(s => (
+                    <span key={s} className="chip">{s}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="card var5-card">
+                <h3>Verlauf</h3>
+                <input type="text" className="input-field" placeholder="z. B. langsamer Beginn vor 6 Wochen..." />
+              </div>
+              <div className="btn-row">
+                <button className="btn btn-primary">Weiter</button>
+                <button className="btn btn-secondary">Zurück</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function Variant6() {
+      return (
+        <div className="variant-frame var6">
+          <div className="layout-grid">
+            <div className="sidebar var6-sidebar">
+              <div className="sidebar-title" style={{ color: '#1a3a52' }}>Generator</div>
+              {[1,2,3,4,5,6,7,8,9,10].map(i => (
+                <button key={i} className={`step-btn var6-btn ${i === 3 ? 'active' : ''}`}>
+                  <span style={{ fontSize: '11px' }}>0{i}</span> Schritt
+                </button>
+              ))}
+            </div>
+            <div className="main">
+              <h1 style={{ color: '#1a3a52', marginTop: 0 }}>Symptomatik & Verlauf</h1>
+              <p style={{ color: '#4a7ba7' }}>Auswahl und Dokumentation der psychiatrischen Symptome.</p>
+              <div className="card" style={{ background: 'white', border: '1px solid #d4e4f7', boxShadow: '0 2px 6px rgba(74, 123, 167, 0.08)' }}>
+                <h3 style={{ color: '#4a7ba7' }}>Leitsymptome</h3>
+                <div className="chips">
+                  {['Depressive Stimmung', 'Schlafstörung', 'Anhedonie'].map(s => (
+                    <span key={s} style={{ padding: '8px 14px', background: '#d4e4f7', color: '#2c5aa0', borderRadius: '12px', fontSize: '13px', fontWeight: '500' }}>{s}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="card" style={{ background: 'white', border: '1px solid #d4e4f7', boxShadow: '0 2px 6px rgba(74, 123, 167, 0.08)' }}>
+                <h3 style={{ color: '#4a7ba7' }}>Verlauf</h3>
+                <input type="text" className="input-field" placeholder="z. B. langsamer Beginn vor 6 Wochen..." style={{ border: '2px solid #d4e4f7' }} />
+              </div>
+              <div className="btn-row">
+                <button className="btn btn-primary" style={{ background: 'linear-gradient(135deg, #2c5aa0 0%, #1f3f66 100%)' }}>Weiter</button>
+                <button className="btn btn-secondary" style={{ border: '2px solid #d4e4f7' }}>Zurück</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function ExplorationPage() {
+      const [selected, setSelected] = React.useState('var1');
+
+      const variants = [
+        { id: 'var1', name: '1. Minimalist Modern', desc: 'Clean & Simple', component: Variant1 },
+        { id: 'var2', name: '2. Bold & Contrast', desc: 'Dark Mode', component: Variant2 },
+        { id: 'var3', name: '3. Glassmorphism', desc: 'Modern & Airy', component: Variant3 },
+        { id: 'var4', name: '4. Horizontal Tabs', desc: 'Top Navigation', component: Variant4 },
+        { id: 'var5', name: '5. Elevated Shadows', desc: 'Modern Depth', component: Variant5 },
+        { id: 'var6', name: '6. Rounded Soft', desc: 'Friendly & Approachable', component: Variant6 },
+      ];
+
+      const CurrentVariant = variants.find(v => v.id === selected)?.component || Variant1;
+
+      return (
+        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', minHeight: '100vh', background: '#f5f7fa' }}>
+          <div style={{ background: 'white', borderRight: '1px solid #e0e4e8', padding: '24px 18px', overflowY: 'auto', maxHeight: '100vh' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: '700', color: '#0f2847', margin: '0 0 20px', letterSpacing: '-0.01em', textTransform: 'uppercase' }}>
+              Varianten
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {variants.map(v => (
+                <button
+                  key={v.id}
+                  onClick={() => setSelected(v.id)}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: '8px',
+                    border: selected === v.id ? '1px solid #2c5aa0' : '1px solid transparent',
+                    background: selected === v.id ? '#e8f0f9' : 'transparent',
+                    color: selected === v.id ? '#2c5aa0' : '#5a6f85',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    fontSize: '13px',
+                    fontWeight: selected === v.id ? '600' : '500',
+                    transition: 'all 120ms',
+                    lineHeight: '1.4'
+                  }}
+                >
+                  <div>{v.name}</div>
+                  <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '2px' }}>{v.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={{ padding: '40px', overflowY: 'auto', maxHeight: '100vh' }}>
+            <div style={{ marginBottom: '32px' }}>
+              <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#0f2847', margin: '0 0 8px' }}>
+                Fallkonzeptgenerator
+              </h1>
+              <p style={{ color: '#5a6f85', margin: 0, maxWidth: '600px' }}>
+                6 verschiedene Design-Richtungen für ein modernes, professionelles Interface. Wähle eine Variante aus, um die Voransicht zu sehen.
+              </p>
+            </div>
+            <CurrentVariant />
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<ExplorationPage />);
+  </script>
+</body>
+</html>

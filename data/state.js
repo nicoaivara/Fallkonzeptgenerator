@@ -7,7 +7,7 @@
       antrag: "Erstantrag",            // Erstantrag | Umwandlungsantrag
       ageGroup: "Erwachsene",
       verfahren: "Verhaltenstherapie",
-      domain: "Depression",
+      domain: "F30-F39",
       patientInitials: "",
       datum: new Date().toISOString().slice(0, 10),
       icdCodes: [],   // [{ code: "F33.1", specifier: "G" }, ...] — wird auf Schritt 1 gesetzt
@@ -16,13 +16,19 @@
       gender: "",
       age: "",
       occupation: "",
-      family: "",
-      kids: "",
-      workability: "",
+      employmentStatus: "",   // Vollzeit | Teilzeit | Selbstständig | ...
+      familienstand: "",       // Ledig | Verheiratet | ...
+      wohnsituation: "",       // allein lebend | mit Familie | ...
+      kidsCount: "",           // keine Kinder | 1 Kind | 2 Kinder | ...
+      kidsNotes: "",           // Freitext: Alter, Sorgerecht o.ä.
+      workability: "",         // vollständig arbeitsfähig | krankgeschrieben | ...
+      family: "",              // Legacy-Feld (Altdaten)
+      kids: "",                // Legacy-Feld (Altdaten)
       sociodemographic: "",
     },
     // Symptom map: id -> "present" | "lead" | "unclear"
     symptoms: {},
+    symptomsByDx: {},    // { "F32.1": { "mood_depressed": "lead", ... }, "F34.1": { ... } }
     deepenings: {},        // { sleep: {...}, rumination: {...}, withdrawal: {...} }
     leadSymptoms: {},      // id -> true (für Bericht)
     course: {
@@ -84,8 +90,13 @@
       const raw = localStorage.getItem(KEY);
       if (!raw) return structuredClone(window.INITIAL_STATE);
       const parsed = JSON.parse(raw);
-      // Shallow merge top level
-      return Object.assign(structuredClone(window.INITIAL_STATE), parsed);
+      const merged = Object.assign(structuredClone(window.INITIAL_STATE), parsed);
+      // Migrate legacy domain names → chapter IDs
+      const legacyMap = { "Depression": "F30-F39", "Angst": "F40-F48", "Zwang": "F40-F48", "Trauma": "F40-F48" };
+      if (merged.meta && legacyMap[merged.meta.domain]) {
+        merged.meta.domain = legacyMap[merged.meta.domain];
+      }
+      return merged;
     } catch (e) {
       return structuredClone(window.INITIAL_STATE);
     }
@@ -99,7 +110,7 @@
 
   // Beispielfall — typische mittelgradige Depression mit Leistungs-/Rückzugsmuster
   window.SAMPLE_CASE = {
-    meta: { antrag: "Erstantrag", ageGroup: "Erwachsene", verfahren: "Verhaltenstherapie", domain: "Depression", patientInitials: "M.B.", datum: new Date().toISOString().slice(0,10) },
+    meta: { antrag: "Erstantrag", ageGroup: "Erwachsene", verfahren: "Verhaltenstherapie", domain: "F30-F39", patientInitials: "M.B.", datum: new Date().toISOString().slice(0,10) },
     basics: { gender: "w", age: "38", occupation: "Projektleiterin, Vollzeit", family: "verheiratet, 2 Kinder", kids: "ja (8, 11)", workability: "aktuell krankgeschrieben" },
     symptoms: {
       mood_depressed: "lead", anhedonia: "lead", joylessness: "present",

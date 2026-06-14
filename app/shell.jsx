@@ -1,17 +1,18 @@
-// Hauptkomponente: Shell + Sidebar + Step-Routing
+// Hauptkomponente: Shell mit Horizontal Tabs Navigation
 const { useState, useEffect, useMemo, useCallback } = React;
 
 const STEPS = [
-  { id: "basics",     num: "01", label: "Basisdaten" },
-  { id: "symptoms",   num: "02", label: "Symptomatik" },
-  { id: "course",     num: "03", label: "Verlauf & Schwere" },
-  { id: "risk",       num: "04", label: "Risiko & DD" },
-  { id: "findings",   num: "05", label: "Psychischer Befund" },
-  { id: "diagnosis",  num: "06", label: "Diagnose" },
-  { id: "mechanisms", num: "07", label: "Fallmodell" },
-  { id: "goals",      num: "08", label: "Ziele & Plan" },
-  { id: "prognosis",  num: "09", label: "Prognose" },
-  { id: "report",     num: "10", label: "Bericht" },
+  { id: "basics",     num: "1",   label: "Soziodemografie" },
+  { id: "symptoms",   num: "2.1", label: "Symptomatik" },
+  { id: "course",     num: "2.2", label: "Verlauf & Schwere" },
+  { id: "risk",       num: "2.3", label: "Suizidalität & Risiko" },
+  { id: "findings",   num: "2.4", label: "Psychischer Befund" },
+  { id: "somatic",    num: "3",   label: "Somatischer Befund" },
+  { id: "mechanisms", num: "4",   label: "Lebensgeschichte & Fallmodell" },
+  { id: "diagnosis",  num: "5",   label: "Diagnose & DD" },
+  { id: "goals",      num: "6.1", label: "Ziele & Behandlungsplan" },
+  { id: "prognosis",  num: "6.2", label: "Prognose" },
+  { id: "report",     num: "",    label: "Bericht" },
 ];
 
 function App() {
@@ -33,7 +34,7 @@ function App() {
   const visibleSteps = useMemo(() => {
     const base = [...STEPS];
     if (state.meta.antrag === "Umwandlungsantrag") {
-      base.splice(9, 0, { id: "conversion", num: "9b", label: "Umwandlung" });
+      base.splice(10, 0, { id: "conversion", num: "6.3", label: "Umwandlung" });
     }
     return base;
   }, [state.meta.antrag]);
@@ -55,9 +56,6 @@ function App() {
     flags.prognosis = Object.keys(state.prognosis.favorable).length || Object.keys(state.prognosis.unfavorable).length;
     return flags;
   }, [state]);
-
-  const completedCount = Object.values(completion).filter(Boolean).length;
-  const totalCount = visibleSteps.length - 1; // ohne report
 
   function loadSample() {
     if (!confirm("Beispielfall laden? Aktuelle Eingaben werden überschrieben.")) return;
@@ -87,6 +85,7 @@ function App() {
     case "symptoms":   Page = <StepSymptoms {...stepProps} />; break;
     case "course":     Page = <StepCourse {...stepProps} />; break;
     case "risk":       Page = <StepRisk {...stepProps} />; break;
+    case "somatic":    Page = <StepSomatic {...stepProps} />; break;
     case "findings":   Page = <StepFindings {...stepProps} />; break;
     case "diagnosis":  Page = <StepDiagnosis {...stepProps} />; break;
     case "mechanisms": Page = <StepMechanisms {...stepProps} />; break;
@@ -99,51 +98,53 @@ function App() {
 
   return (
     <div className="app">
-      <aside className="sidebar">
-        <div className="sidebar-head">
-          <div className="brand">Fallkonzeptgenerator</div>
-          <div className="title">{state.meta.patientInitials || "Neuer Fall"}</div>
-          <div className="sidebar-progress">
-            <span>{completedCount}/{totalCount}</span>
-            <div className="bar"><div style={{ width: `${(completedCount/totalCount)*100}%` }} /></div>
-          </div>
+      {/* Horizontal Navigation Bar */}
+      <div className="top-nav">
+        <div className="nav-brand">Fallkonzeptgenerator</div>
+        <div className="nav-steps">
+          {visibleSteps.map((s, i) => (
+            <button
+              key={s.id}
+              className="step-btn"
+              aria-current={i === stepIdx ? "true" : "false"}
+              onClick={() => setStepIdx(i)}
+              title={s.label}
+            >
+              {s.num ? `${s.num} ` : ""}{s.label}
+            </button>
+          ))}
         </div>
-        <nav className="steps">
-          {visibleSteps.map((s, i) => {
-            const done = completion[s.id];
-            const cls = done ? "step-btn complete" : "step-btn";
-            return (
-              <button
-                key={s.id}
-                className={cls}
-                aria-current={i === stepIdx}
-                onClick={() => setStepIdx(i)}
-              >
-                <span className="num">{s.num}</span>
-                <span>{s.label}</span>
-                <span className="dot" />
-              </button>
-            );
-          })}
-        </nav>
-        <div className="sidebar-foot">
-          <button className="btn ghost sm" onClick={loadSample}>Beispielfall laden</button>
-          <button className="btn ghost sm" onClick={resetAll}>Alles zurücksetzen</button>
-          <div style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 6 }}>
-            Eingaben werden lokal im Browser gespeichert.
-          </div>
-        </div>
-      </aside>
+      </div>
 
+      {/* Main Content Area */}
       <main className="main">
         {Page}
+        
+        {/* Footer with Action Buttons */}
+        {currentStep.id !== "report" && (
+          <div style={{ marginTop: 40, paddingTop: 20, borderTop: "1px solid var(--line)" }}>
+            <div style={{ display: "flex", gap: 12, justifyContent: "space-between" }}>
+              <div>
+                <button className="btn ghost sm" onClick={loadSample} style={{ marginRight: 8 }}>
+                  Beispielfall laden
+                </button>
+                <button className="btn ghost sm" onClick={resetAll}>
+                  Zurücksetzen
+                </button>
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-tertiary)", textAlign: "right", alignSelf: "center" }}>
+                Fall: {state.meta.patientInitials || "Neu"}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
 }
 
 // Reusable nav-row at bottom of each step
-function NavRow({ go, stepIdx, total, primaryLabel, onPrimary }) {
+function NavRow({ go, primaryLabel, onPrimary }) {
   return (
     <div className="nav-row">
       <button className="btn ghost" onClick={() => go(-1)}>← Zurück</button>

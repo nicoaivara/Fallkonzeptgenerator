@@ -1,5 +1,9 @@
 // Schritte 5-7: Befund, Diagnose, Fallmodell
 
+// Differentialdiagnostik-Screens (im Diagnose-Schritt)
+const DD_BIPOLAR_ITEMS = ["jemals Phasen mit deutlich gehobener Stimmung","jemals Phasen mit deutlich gesteigertem Antrieb","deutlich vermindertes Schlafbedürfnis ohne Müdigkeit","Rededrang / Ideenflucht","riskantes Verhalten","Größenideen","Fremdbeobachtung solcher Phasen","Klinikaufenthalt wegen Hochstimmung/Enthemmung","Antidepressiva-induzierte Hochphase"];
+const DD_PSYCHOSIS_ITEMS = ["Schuldwahn","Verarmungswahn","hypochondrischer Wahn","nihilistische Ideen","Stimmenhören","imperative Stimmen","optische Halluzinationen","Ich-Störungen","Realitätsprüfung eingeschränkt"];
+
 // ── 5. Befund ────────────────────────────────────────
 function StepFindings({ state, setState, update, go }) {
   const sel = new Set(Object.keys(state.symptoms));
@@ -63,7 +67,7 @@ function StepFindings({ state, setState, update, go }) {
   return (
     <>
       <div className="page-head">
-        <div className="crumb">Schritt 05</div>
+        <div className="crumb">Schritt 2.4</div>
         <h1>Psychischer Befund</h1>
         <p>AMDP-orientiert. Vorschläge entstehen aus den ausgewählten Symptomen — bitte prüfen, übernehmen, ändern oder verwerfen. Standard-unauffällige Bereiche werden separat als geprüft markiert.</p>
       </div>
@@ -150,12 +154,29 @@ function StepDiagnosis({ state, setState, update, go }) {
     }));
   }
 
+  function setBipoItem(k) {
+    setState(prev => {
+      const items = { ...(prev.bipolarity.items || {}) };
+      if (items[k]) delete items[k]; else items[k] = true;
+      const n = Object.keys(items).length;
+      const result = n === 0 ? "kein Hinweis" : n <= 1 ? "unclear" : "hint";
+      return { ...prev, bipolarity: { items, result } };
+    });
+  }
+  function setPsyItem(k) {
+    setState(prev => {
+      const items = { ...(prev.psychosis.items || {}) };
+      if (items[k]) delete items[k]; else items[k] = true;
+      return { ...prev, psychosis: { items, any: Object.keys(items).length > 0 } };
+    });
+  }
+
   return (
     <>
       <div className="page-head">
-        <div className="crumb">Schritt 06</div>
-        <h1>Diagnose</h1>
-        <p>Auf Basis der ausgewählten Symptome plausibel zu prüfende Diagnosen. Kein Automatismus — bitte als gesichert oder Verdacht übernehmen.</p>
+        <div className="crumb">Schritt 5</div>
+        <h1>Diagnose zum Zeitpunkt der Antragstellung</h1>
+        <p>Auf Basis von Befund und Fallmodell zu prüfende Diagnosen samt differentialdiagnostischen Überlegungen. Kein Automatismus — bitte als gesichert oder Verdacht übernehmen.</p>
       </div>
 
       {proposals.length === 0 && (
@@ -202,12 +223,23 @@ function StepDiagnosis({ state, setState, update, go }) {
         {(state.meta.icdCodes || []).length === 0 ? (
           <p className="hint">In Schritt 1 wurden keine ICD-Codes ausgewählt.</p>
         ) : (
-          <ul style={{ margin: 0, paddingLeft: 18 }}>
+          <div className="icd-table">
+            <div className="icd-row icd-header">
+              <div className="icd-col icd-code">Code</div>
+              <div className="icd-col icd-spec">Spezifizierer</div>
+              <div className="icd-col icd-label">Diagnose</div>
+            </div>
             {(state.meta.icdCodes || []).map(c => {
               const it = window.icdLookup(c.code);
-              return <li key={c.code}><strong>{c.code} {c.specifier}</strong> — {it?.label || ""}</li>;
+              return (
+                <div key={c.code} className="icd-row">
+                  <div className="icd-col icd-code"><strong>{c.code}</strong></div>
+                  <div className="icd-col icd-spec">{c.specifier || "—"}</div>
+                  <div className="icd-col icd-label">{it?.label || "—"}</div>
+                </div>
+              );
             })}
-          </ul>
+          </div>
         )}
         <p className="hint">Diese Auswahl erscheint im Bericht als Diagnoseliste. In den Feldern unten können bei Bedarf zusätzliche/manuelle Codes ergänzt werden.</p>
       </div>
@@ -223,6 +255,38 @@ function StepDiagnosis({ state, setState, update, go }) {
           <textarea className="textarea" value={state.diagnoses.ddNotes}
                     onChange={e => update("diagnoses", { ddNotes: e.target.value })} />
         </label>
+      </div>
+
+      {/* Differentialdiagnostik: Bipolarität */}
+      <div className="card">
+        <div className="card-head">
+          <h3>Bipolaritätscheck</h3>
+          <span className={"tag" + (state.bipolarity.result === "hint" ? " warn" : "")}>{state.bipolarity.result === "kein Hinweis" ? "kein Hinweis" : state.bipolarity.result === "unclear" ? "unklar, weiter prüfen" : "Hinweis auf Hypomanie/Manie"}</span>
+        </div>
+        <div className="check-grid">
+          {DD_BIPOLAR_ITEMS.map(b => (
+            <label className="check" key={b}>
+              <input type="checkbox" checked={!!state.bipolarity.items?.[b]} onChange={() => setBipoItem(b)} />
+              <span>{b}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Differentialdiagnostik: Psychose */}
+      <div className="card">
+        <div className="card-head">
+          <h3>Psychosecheck</h3>
+          {state.psychosis.any && <span className="tag warn">DD/Schweregrad prüfen</span>}
+        </div>
+        <div className="check-grid">
+          {DD_PSYCHOSIS_ITEMS.map(b => (
+            <label className="check" key={b}>
+              <input type="checkbox" checked={!!state.psychosis.items?.[b]} onChange={() => setPsyItem(b)} />
+              <span>{b}</span>
+            </label>
+          ))}
+        </div>
       </div>
 
       <NavRow go={go} />
@@ -269,9 +333,9 @@ function StepMechanisms({ state, setState, go }) {
   return (
     <>
       <div className="page-head">
-        <div className="crumb">Schritt 07</div>
-        <h1>Fallmodell — aufrechterhaltende Muster</h1>
-        <p>Welche Erklärungen passen zu den ausgewählten Symptomen? Vorschläge basieren auf einem transparenten Punktesystem. Erst nach Übernehmen werden Prädispositionen, Grundannahmen, Ziele und Methoden vorgeschlagen.</p>
+        <div className="crumb">Schritt 4</div>
+        <h1>Lebensgeschichte & Fallmodell</h1>
+        <p>Aus Anamnese, Lebensgeschichte und Krankheitsverlauf wird das individuelle Erklärungsmodell entwickelt — die makro- und mikroanalytische Verhaltensanalyse zu Entstehung und Aufrechterhaltung der Störung. Vorschläge basieren auf einem transparenten Punktesystem; erst nach Übernehmen werden Prädispositionen, Grundannahmen, Ziele und Methoden vorgeschlagen.</p>
       </div>
 
       {visible.length === 0 && (
